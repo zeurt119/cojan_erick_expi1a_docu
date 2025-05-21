@@ -34,7 +34,7 @@ def genres_afficher(order_by, id_genre_sel):
         try:
             with DBconnection() as mc_afficher:
                 if order_by == "ASC" and id_genre_sel == 0:
-                    strsql_genres_afficher = """SELECT * FROM t_personnes ORDER BY ENo ASC"""
+                    strsql_genres_afficher = """SELECT * FROM t_utilisateur ORDER BY id_utilisateur ASC"""
                     mc_afficher.execute(strsql_genres_afficher)
                 elif order_by == "ASC":
                     # C'EST LA QUE VOUS ALLEZ DEVOIR PLACER VOTRE PROPRE LOGIQUE MySql
@@ -43,11 +43,11 @@ def genres_afficher(order_by, id_genre_sel):
                     # donc, je précise les champs à afficher
                     # Constitution d'un dictionnaire pour associer l'id du genre sélectionné avec un nom de variable
                     valeur_id_genre_selected_dictionnaire = {"value_id_genre_selected": id_genre_sel}
-                    strsql_genres_afficher = """SELECT * FROM t_personnes WHERE ENo = %(value_id_genre_selected)s"""
+                    strsql_genres_afficher = """SELECT * FROM t_utilisateur WHERE id_utilisateur = %(value_id_genre_selected)s"""
 
                     mc_afficher.execute(strsql_genres_afficher, valeur_id_genre_selected_dictionnaire)
                 else:
-                    strsql_genres_afficher = """SELECT * FROM t_personnes ORDER BY ENo DESC"""
+                    strsql_genres_afficher = """SELECT * FROM t_utilisateur ORDER BY id_utilisateur DESC"""
 
                     mc_afficher.execute(strsql_genres_afficher)
 
