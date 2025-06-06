@@ -34,7 +34,7 @@ def genres_afficher(order_by, id_genre_sel):
         try:
             with DBconnection() as mc_afficher:
                 if order_by == "ASC" and id_genre_sel == 0:
-                    strsql_genres_afficher = """SELECT * FROM t_utilisateur ORDER BY id_utilisateur ASC"""
+                    strsql_genres_afficher = """SELECT * FROM t_docclients ORDER BY id_doc ASC"""
                     mc_afficher.execute(strsql_genres_afficher)
                 elif order_by == "ASC":
                     # C'EST LA QUE VOUS ALLEZ DEVOIR PLACER VOTRE PROPRE LOGIQUE MySql
@@ -43,11 +43,11 @@ def genres_afficher(order_by, id_genre_sel):
                     # donc, je précise les champs à afficher
                     # Constitution d'un dictionnaire pour associer l'id du genre sélectionné avec un nom de variable
                     valeur_id_genre_selected_dictionnaire = {"value_id_genre_selected": id_genre_sel}
-                    strsql_genres_afficher = """SELECT * FROM t_utilisateur WHERE id_utilisateur = %(value_id_genre_selected)s"""
+                    strsql_genres_afficher = """SELECT * FROM t_docclients WHERE id_doc = %(value_id_genre_selected)s"""
 
                     mc_afficher.execute(strsql_genres_afficher, valeur_id_genre_selected_dictionnaire)
                 else:
-                    strsql_genres_afficher = """SELECT * FROM t_utilisateur ORDER BY id_utilisateur DESC"""
+                    strsql_genres_afficher = """SELECT * FROM t_docclients ORDER BY id_doc DESC"""
 
                     mc_afficher.execute(strsql_genres_afficher)
 
@@ -106,7 +106,7 @@ def genres_ajouter_wtf():
                 valeurs_insertion_dictionnaire = {"value_intitule_genre": name_genre}
                 print("valeurs_insertion_dictionnaire ", valeurs_insertion_dictionnaire)
 
-                strsql_insert_genre = """INSERT INTO t_utilisateur (id_utilisateur,nom) VALUES (NULL,%(value_intitule_genre)s) """
+                strsql_insert_genre = """INSERT INTO t_docclients (id_doc,titre) VALUES (NULL,%(value_intitule_genre)s) """
                 with DBconnection() as mconn_bd:
                     mconn_bd.execute(strsql_insert_genre, valeurs_insertion_dictionnaire)
 
@@ -146,60 +146,68 @@ def genres_ajouter_wtf():
 
 @app.route("/genre_update", methods=['GET', 'POST'])
 def genre_update_wtf():
-    # L'utilisateur vient de cliquer sur le bouton "EDIT". Récupère la valeur de "id_genre"
-    id_genre_update = request.values['id_genre_btn_edit_html']
-
-    # Objet formulaire pour l'UPDATE
-    form_update = FormWTFUpdateGenre()
     try:
-        # 2023.05.14 OM S'il y a des listes déroulantes dans le formulaire
-        # La validation pose quelques problèmes
-        if request.method == "POST" and form_update.submit.data:
-            # Récupèrer la valeur du champ depuis "genre_update_wtf.html" après avoir cliqué sur "SUBMIT".
-            # Puis la convertir en lettres minuscules.
-            name_genre_update = form_update.nom_genre_update_wtf.data
-            name_genre_update = name_genre_update.lower()
-            date_genre_essai = form_update.date_genre_wtf_essai.data
+        try:
+            id_doc_update = int(request.values['id_genre_btn_edit_html'])
+        except (ValueError, KeyError):
+            flash("Identifiant invalide ou manquant.", "danger")
+            return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
-            valeur_update_dictionnaire = {"value_id_genre": id_genre_update,
-                                          "value_name_genre": name_genre_update,
-                                          "value_date_genre_essai": date_genre_essai
-                                          }
-            print("valeur_update_dictionnaire ", valeur_update_dictionnaire)
+        form_update = FormWTFUpdateGenre()
 
-            str_sql_update_intitulegenre = """UPDATE t_genre SET intitule_genre = %(value_name_genre)s, 
-            date_ins_genre = %(value_date_genre_essai)s WHERE id_genre = %(value_id_genre)s """
+        if request.method == "POST" and form_update.submit.data and form_update.validate():
+            titre_update = form_update.titre.data
+            contenu_update = form_update.contenu.data
+            date_ajout_update = form_update.date_ajout.data
+
+            valeur_update_dictionnaire = {
+                "value_id_doc": id_doc_update,
+                "value_titre": titre_update,
+                "value_contenu": contenu_update,
+                "value_date_ajout": date_ajout_update
+            }
+
+            str_sql_update_docclient = """
+                UPDATE t_docclients 
+                SET titre = %(value_titre)s, 
+                    contenu = %(value_contenu)s,
+                    date_ajout = %(value_date_ajout)s
+                WHERE id_doc = %(value_id_doc)s
+            """
+
             with DBconnection() as mconn_bd:
-                mconn_bd.execute(str_sql_update_intitulegenre, valeur_update_dictionnaire)
+                mconn_bd.execute(str_sql_update_docclient, valeur_update_dictionnaire)
 
-            flash(f"Donnée mise à jour !!", "success")
-            print(f"Donnée mise à jour !!")
+            flash("Document mis à jour !", "success")
+            return redirect(url_for('genres_afficher', order_by="ASC", id_genre_sel=id_doc_update))
 
-            # afficher et constater que la donnée est mise à jour.
-            # Affiche seulement la valeur modifiée, "ASC" et l'"id_genre_update"
-            return redirect(url_for('genres_afficher', order_by="ASC", id_genre_sel=id_genre_update))
         elif request.method == "GET":
-            # Opération sur la BD pour récupérer "id_genre" et "intitule_genre" de la "t_genre"
-            str_sql_id_genre = "SELECT id_genre, intitule_genre, date_ins_genre FROM t_genre " \
-                               "WHERE id_genre = %(value_id_genre)s"
-            valeur_select_dictionnaire = {"value_id_genre": id_genre_update}
+            str_sql_select_docclient = """
+                SELECT id_doc, titre, contenu, date_ajout 
+                FROM t_docclients 
+                WHERE id_doc = %(value_id_doc)s
+            """
+            valeur_select_dictionnaire = {"value_id_doc": id_doc_update}
+
             with DBconnection() as mybd_conn:
-                mybd_conn.execute(str_sql_id_genre, valeur_select_dictionnaire)
-            # Une seule valeur est suffisante "fetchone()", vu qu'il n'y a qu'un seul champ "nom genre" pour l'UPDATE
-            data_nom_genre = mybd_conn.fetchone()
-            print("data_nom_genre ", data_nom_genre, " type ", type(data_nom_genre), " genre ",
-                  data_nom_genre["intitule_genre"])
+                mybd_conn.execute(str_sql_select_docclient, valeur_select_dictionnaire)
+                data_docclient = mybd_conn.fetchone()
 
-            # Afficher la valeur sélectionnée dans les champs du formulaire "genre_update_wtf.html"
-            form_update.nom_genre_update_wtf.data = data_nom_genre["intitule_genre"]
-            form_update.date_genre_wtf_essai.data = data_nom_genre["date_ins_genre"]
+            if data_docclient is None:
+                flash("Aucun document trouvé avec cet identifiant.", "warning")
+                return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
-    except Exception as Exception_genre_update_wtf:
+            form_update.titre.data = data_docclient["titre"]
+            form_update.contenu.data = data_docclient["contenu"]
+            form_update.date_ajout.data = data_docclient["date_ajout"]
+
+    except Exception as e:
         raise ExceptionGenreUpdateWtf(f"fichier : {Path(__file__).name}  ;  "
                                       f"{genre_update_wtf.__name__} ; "
-                                      f"{Exception_genre_update_wtf}")
+                                      f"{e}")
 
     return render_template("genres/genre_update_wtf.html", form_update=form_update)
+
 
 
 """
@@ -219,12 +227,12 @@ def genre_update_wtf():
 
 @app.route("/genre_delete", methods=['GET', 'POST'])
 def genre_delete_wtf():
-    data_utilisateur_delete = None
+    data_docclient_delete = None
     btn_submit_del = None
 
     try:
-        # Récupération sécurisée de l'ID utilisateur (converti en int)
-        id_utilisateur_delete = int(request.values.get('id_genre_btn_delete_html', 0))
+        # Récupération sécurisée de l'ID du document
+        id_doc_delete = int(request.values.get('id_genre_btn_delete_html', 0))
 
         form_delete = FormWTFDeleteGenre()
         print("on submit", form_delete.validate_on_submit())
@@ -235,57 +243,57 @@ def genre_delete_wtf():
                 return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
             elif form_delete.submit_btn_conf_del.data:
-                data_utilisateur_delete = session.get('data_utilisateur_delete')
-                print("data_utilisateur_delete :", data_utilisateur_delete)
+                data_docclient_delete = session.get('data_docclient_delete')
+                print("data_docclient_delete :", data_docclient_delete)
 
-                flash("Effacer l'utilisateur de façon définitive de la BD !!!", "danger")
+                flash("Effacer le document de façon définitive de la BD !!!", "danger")
                 btn_submit_del = True
 
             elif form_delete.submit_btn_del.data:
-                valeur_delete_dictionnaire = {"value_id_utilisateur": id_utilisateur_delete}
+                valeur_delete_dictionnaire = {"value_id_doc": id_doc_delete}
                 print("valeur_delete_dictionnaire", valeur_delete_dictionnaire)
 
-                str_sql_delete_utilisateur = """
-                    DELETE FROM t_utilisateur 
-                    WHERE id_utilisateur = %(value_id_utilisateur)s
+                str_sql_delete_docclient = """
+                    DELETE FROM t_docclients 
+                    WHERE id_doc = %(value_id_doc)s
                 """
                 with DBconnection() as mconn_bd:
-                    mconn_bd.execute(str_sql_delete_utilisateur, valeur_delete_dictionnaire)
+                    mconn_bd.execute(str_sql_delete_docclient, valeur_delete_dictionnaire)
 
-                flash("Utilisateur définitivement effacé !!", "success")
-                print("Utilisateur définitivement effacé !!")
+                flash("Document définitivement effacé !!", "success")
+                print("Document définitivement effacé !!")
 
                 return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
         elif request.method == "GET":
-            valeur_select_dictionnaire = {"value_id_utilisateur": id_utilisateur_delete}
-            print("ID utilisateur (GET):", id_utilisateur_delete, type(id_utilisateur_delete))
+            valeur_select_dictionnaire = {"value_id_doc": id_doc_delete}
+            print("ID document (GET):", id_doc_delete, type(id_doc_delete))
 
-            str_sql_select_utilisateur = """
-                SELECT id_utilisateur, nom 
-                FROM t_utilisateur 
-                WHERE id_utilisateur = %(value_id_utilisateur)s
+            str_sql_select_docclient = """
+                SELECT id_doc, titre
+                FROM t_docclients
+                WHERE id_doc = %(value_id_doc)s
             """
 
             with DBconnection() as mydb_conn:
-                mydb_conn.execute(str_sql_select_utilisateur, valeur_select_dictionnaire)
-                data_utilisateur_delete = mydb_conn.fetchall()
-                print("data_utilisateur_delete...", data_utilisateur_delete)
+                mydb_conn.execute(str_sql_select_docclient, valeur_select_dictionnaire)
+                data_docclient_delete = mydb_conn.fetchall()
+                print("data_docclient_delete...", data_docclient_delete)
 
-                session['data_utilisateur_delete'] = data_utilisateur_delete
+                session['data_docclient_delete'] = data_docclient_delete
 
-                if data_utilisateur_delete:
-                    data_utilisateur = data_utilisateur_delete[0]
-                    print("data_utilisateur", data_utilisateur)
-                    form_delete.nom_genre_delete_wtf.data = data_utilisateur["nom"]
+                if data_docclient_delete:
+                    data_doc = data_docclient_delete[0]
+                    print("data_doc", data_doc)
+                    form_delete.nom_genre_delete_wtf.data = data_doc["titre"]
                 else:
-                    flash("Utilisateur non trouvé. Impossible de le supprimer.", "warning")
+                    flash("Document non trouvé. Impossible de le supprimer.", "warning")
                     return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
             btn_submit_del = False
 
     except ValueError:
-        flash("ID utilisateur invalide.", "danger")
+        flash("ID document invalide.", "danger")
         return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
     except Exception as Exception_genre_delete_wtf:
         raise ExceptionGenreDeleteWtf(f"fichier : {Path(__file__).name}  ;  "
@@ -295,4 +303,4 @@ def genre_delete_wtf():
     return render_template("genres/genre_delete_wtf.html",
                            form_delete=form_delete,
                            btn_submit_del=btn_submit_del,
-                           data_films_associes=data_utilisateur_delete)
+                           data_films_associes=data_docclient_delete)

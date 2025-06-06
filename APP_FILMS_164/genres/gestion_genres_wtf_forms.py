@@ -4,7 +4,7 @@
     Gestion des formulaires avec WTF
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField
+from wtforms import StringField, DateField, TextAreaField
 from wtforms import SubmitField
 from wtforms.validators import Length, InputRequired, DataRequired
 from wtforms.validators import Regexp
@@ -16,7 +16,7 @@ class FormWTFAjouterGenres(FlaskForm):
         Définition d'un "bouton" submit avec un libellé personnalisé.
     """
     nom_genre_regexp = "^([A-Z]|[a-zÀ-ÖØ-öø-ÿ])[A-Za-zÀ-ÖØ-öø-ÿ]*['\- ]?[A-Za-zÀ-ÖØ-öø-ÿ]+$"
-    nom_genre_wtf = StringField("Clavioter le genre ", validators=[Length(min=2, max=20, message="min 2 max 20"),
+    nom_genre_wtf = StringField("Ajouter une doc ", validators=[Length(min=2, max=20, message="min 2 max 20"),
                                                                    Regexp(nom_genre_regexp,
                                                                           message="Pas de chiffres, de caractères "
                                                                                   "spéciaux, "
@@ -27,23 +27,10 @@ class FormWTFAjouterGenres(FlaskForm):
 
 
 class FormWTFUpdateGenre(FlaskForm):
-    """
-        Dans le formulaire "genre_update_wtf.html" on impose que le champ soit rempli.
-        Définition d'un "bouton" submit avec un libellé personnalisé.
-    """
-    nom_genre_update_regexp = "^([A-Z]|[a-zÀ-ÖØ-öø-ÿ])[A-Za-zÀ-ÖØ-öø-ÿ]*['\- ]?[A-Za-zÀ-ÖØ-öø-ÿ]+$"
-    nom_genre_update_wtf = StringField("Clavioter le genre ", validators=[Length(min=2, max=20, message="min 2 max 20"),
-                                                                          Regexp(nom_genre_update_regexp,
-                                                                                 message="Pas de chiffres, de "
-                                                                                         "caractères "
-                                                                                         "spéciaux, "
-                                                                                         "d'espace à double, de double "
-                                                                                         "apostrophe, de double trait "
-                                                                                         "union")
-                                                                          ])
-    date_genre_wtf_essai = DateField("Essai date", validators=[InputRequired("Date obligatoire"),
-                                                               DataRequired("Date non valide")])
-    submit = SubmitField("Update genre")
+    titre = StringField("Titre", validators=[DataRequired(), Length(min=2, max=200)])
+    contenu = TextAreaField("Contenu", validators=[DataRequired(), Length(min=2, max=2000)])
+    date_ajout = StringField("Date ajout (YYYY-MM-DD)", validators=[DataRequired()])
+    submit = SubmitField("Mettre à jour")
 
 
 class FormWTFDeleteGenre(FlaskForm):
