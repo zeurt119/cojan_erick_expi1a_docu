@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS `t_docclients` (
   `titre` varchar(150) DEFAULT NULL,
   `contenu` text,
   `date_ajout` date DEFAULT NULL,
+  `chemin_fichier` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_doc`),
   KEY `id_client` (`id_client`),
   KEY `id_utilisateur` (`id_utilisateur`),
