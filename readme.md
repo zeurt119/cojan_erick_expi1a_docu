@@ -1,4 +1,4 @@
-# 📁 Gestion documentaire des clients avec Flask et MySQL
+# 📁 Gestion doc des clients avec Flask et MySQL
 
 ## 📝 Description du projet
 
