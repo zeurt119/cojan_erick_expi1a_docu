@@ -6,62 +6,32 @@ Auteur : OM 2022.04.11
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, DateField
 from wtforms import SubmitField
-from wtforms.validators import Length, InputRequired, NumberRange, DataRequired
+from wtforms.validators import Length, InputRequired, NumberRange, DataRequired, Email
 from wtforms.validators import Regexp
 from wtforms.widgets import TextArea
 
 
 class FormWTFAddFilm(FlaskForm):
-    """
-        Dans le formulaire "genres_ajouter_wtf.html" on impose que le champ soit rempli.
-        Définition d'un "bouton" submit avec un libellé personnalisé.
-    """
-    nom_film_regexp = ""
-    nom_film_add_wtf = StringField("Nom du film ", validators=[Length(min=2, max=2000, message="min 2 max 20"),
-                                                               Regexp(nom_film_regexp,
-                                                                      message="Pas de chiffres, de caractères "
-                                                                              "spéciaux, "
-                                                                              "d'espace à double, de double "
-                                                                              "apostrophe, de double trait union")
-                                                               ])
-
-    submit = SubmitField("Enregistrer film")
+    nom_client_add_wtf = StringField("Nom", validators=[Length(min=2, max=50), DataRequired()])
+    prenom_client_add_wtf = StringField("Prénom", validators=[Length(min=2, max=50), DataRequired()])
+    email_client_add_wtf = StringField("Email", validators=[Email(), DataRequired()])
+    entreprise_client_add_wtf = StringField("Entreprise", validators=[Length(max=100)])
+    telephone_client_add_wtf = StringField("Téléphone", validators=[Length(min=6, max=20)])
+    submit = SubmitField("Ajouter client")
 
 
 class FormWTFUpdateFilm(FlaskForm):
-    """
-        Dans le formulaire "film_update_wtf.html" on impose que le champ soit rempli.
-        Définition d'un "bouton" submit avec un libellé personnalisé.
-    """
-
-    nom_film_update_wtf = StringField("Clavioter le titre", widget=TextArea())
-    duree_film_update_wtf = IntegerField("Durée du film (minutes)", validators=[NumberRange(min=1, max=5000,
-                                                                                            message=u"Min %(min)d et "
-                                                                                                    u"max %(max)d "
-                                                                                                    u"Selon Wikipédia "
-                                                                                                    u"L'Incendie du "
-                                                                                                    u"monastère du "
-                                                                                                    u"Lotus rouge "
-                                                                                                    u"durée 1620 "
-                                                                                                    u"min")])
-
-    description_film_update_wtf = StringField("Description du film ", widget=TextArea())
-    cover_link_film_update_wtf = StringField("Lien de l'affiche du film ", widget=TextArea())
-    datesortie_film_update_wtf = DateField("Date de sortie du film", validators=[InputRequired("Date obligatoire"),
-                                                                                 DataRequired("Date non valide")])
-    submit = SubmitField("Update film")
+    nom_client_update_wtf = StringField("Nom", validators=[DataRequired(), Length(min=2, max=50)])
+    prenom_client_update_wtf = StringField("Prénom", validators=[DataRequired(), Length(min=2, max=50)])
+    email_client_update_wtf = StringField("Email", validators=[Email(), DataRequired()])
+    entreprise_client_update_wtf = StringField("Entreprise", validators=[Length(max=100)])
+    telephone_client_update_wtf = StringField("Téléphone", validators=[Length(min=6, max=20)])
+    submit = SubmitField("Mettre à jour")
 
 
 class FormWTFDeleteFilm(FlaskForm):
-    """
-        Dans le formulaire "film_delete_wtf.html"
-
-        nom_film_delete_wtf : Champ qui reçoit la valeur du film, lecture seule. (readonly=true)
-        submit_btn_del : Bouton d'effacement "DEFINITIF".
-        submit_btn_conf_del : Bouton de confirmation pour effacer un "film".
-        submit_btn_annuler : Bouton qui permet d'afficher la table "t_film".
-    """
-    nom_film_delete_wtf = StringField("Effacer ce film")
-    submit_btn_del_film = SubmitField("Effacer film")
-    submit_btn_conf_del_film = SubmitField("Etes-vous sur d'effacer ?")
+    nom_film_delete_wtf = StringField("Nom du client à supprimer", render_kw={'readonly': True})
+    submit_btn_del_film = SubmitField("Effacer client")
+    submit_btn_conf_del_film = SubmitField("Êtes-vous sûr d'effacer ?")
     submit_btn_annuler = SubmitField("Annuler")
+

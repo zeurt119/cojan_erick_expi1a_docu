@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %} Effacer un FILM (WTF) {% endblock %}
+{% block title %} Effacer un CLIENT (WTF) {% endblock %}
 {% block body %}
 <div class="container">
 	<div class="row">
 		<div class="col-md-12">
 			<p>
-				Effacer un FILM
+				Effacer un CLIENT
 			</p>
 			<table class="table table-responsive-sm">
 				{% if data_film_del %}
@@ -18,17 +18,17 @@
 						Nom
 					</th>
 					<th class="">
-						Durée
+						Prénom
 					</th>
 					<th class="">
-						Date de sortie
+						Email
 					</th>
-					<th class="">
-						Description
-					</th>
-					<th class="">
-						Affiche
-					</th>
+                    <th class="">
+                        Entreprise
+                    </th>
+                    <th class="">
+                        Téléphone
+                    </th>
 				</tr>
 				</thead>
 				{% endif %}
@@ -36,43 +36,36 @@
 				<tbody>
 				<tr>
 					<th class="align-middle">
-						{{ row.id_film }}
+						{{ row.id_client }}
 					</th>
 					<th class="align-middle">
-						{{ row.nom_film }}
+						{{ row.nom }}
 					</th>
 					<th class="align-middle">
-						{{ row.duree_film|default("", True) }}
+						{{ row.prenom }}
 					</th>
 					<th class="align-middle">
-						{{ row.date_sortie_film|default("", True) }}
+						{{ row.email }}
 					</th>
-					<th class="align-middle">
-						{{ row.description_film|default("", True) }}
-					</th>
-					<th class="align-middle">
-						<img class="img" src={{ row.cover_link_film|default(None, True) }}
-							 style="border: 0;display:block; width:150px; max-height:auto;"
-							 alt="image masquée FFP8 (in COVID-19 Memory) (absente) mod 164">
-					</th>
-
-				<tr>
-
-				</tr>
+                    <th class="align-middle">
+                        {{ row.entreprise }}
+                    </th>
+                    <th class="align-middle">
+                        {{ row.telephone }}
+                    </th>
 				</tr>
 				</tbody>
 				{% else %}
 				<tbody>
 				<tr>
-
+					<td colspan="6">Aucun client trouvé.</td>
 				</tr>
 				</tbody>
 				{% endfor %}
-
 			</table>
 
 			<form action="" method="POST" novalidate>
-				<!-- Protection contre les attaques Cross-Site Request Forgery (CSRF) -->
+				<!-- Protection CSRF -->
 				{{ form_delete_film.hidden_tag() }}
 				{{ form_delete_film.submit_btn_conf_del_film(class="btn btn-info") }}
 
@@ -86,4 +79,3 @@
 	</div>
 </div>
 {% endblock %}
-

@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS `t_docclients` (
   `titre` varchar(150) DEFAULT NULL,
   `contenu` text,
   `date_ajout` date DEFAULT NULL,
-  `chemin_fichier` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_doc`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

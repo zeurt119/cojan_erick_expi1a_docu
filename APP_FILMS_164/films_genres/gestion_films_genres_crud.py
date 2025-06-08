@@ -32,44 +32,32 @@ def films_genres_afficher(id_film_sel):
     if request.method == "GET":
         try:
             with DBconnection() as mc_afficher:
-                strsql_genres_films_afficher_data = """SELECT id_film, nom_film, duree_film, description_film, cover_link_film, date_sortie_film,
-                                                            GROUP_CONCAT(intitule_genre) as GenresFilms FROM t_genre_film
-                                                            RIGHT JOIN t_film ON t_film.id_film = t_genre_film.fk_film
-                                                            LEFT JOIN t_genre ON t_genre.id_genre = t_genre_film.fk_genre
-                                                            GROUP BY id_film"""
+                # Requête adaptée pour afficher les utilisateurs au lieu des films
+                strsql_genres_films_afficher_data = """SELECT id_client, nom, prenom, email, entreprise, telephone
+                                                       FROM t_client"""
                 if id_film_sel == 0:
-                    # le paramètre 0 permet d'afficher tous les films
-                    # Sinon le paramètre représente la valeur de l'id du film
                     mc_afficher.execute(strsql_genres_films_afficher_data)
                 else:
-                    # Constitution d'un dictionnaire pour associer l'id du film sélectionné avec un nom de variable
-                    valeur_id_film_selected_dictionnaire = {"value_id_film_selected": id_film_sel}
-                    # En MySql l'instruction HAVING fonctionne comme un WHERE... mais doit être associée à un GROUP BY
-                    # L'opérateur += permet de concaténer une nouvelle valeur à la valeur de gauche préalablement définie.
-                    strsql_genres_films_afficher_data += """ HAVING id_film= %(value_id_film_selected)s"""
+                    valeur_id_utilisateur_selected_dictionnaire = {"value_id_film_selected": id_film_sel}
+                    strsql_genres_films_afficher_data += " WHERE id_client = %(value_id_film_selected)s"
+                    mc_afficher.execute(strsql_genres_films_afficher_data, valeur_id_utilisateur_selected_dictionnaire)
 
-                    mc_afficher.execute(strsql_genres_films_afficher_data, valeur_id_film_selected_dictionnaire)
-
-                # Récupère les données de la requête.
                 data_genres_films_afficher = mc_afficher.fetchall()
                 print("data_genres ", data_genres_films_afficher, " Type : ", type(data_genres_films_afficher))
 
-                # Différencier les messages.
                 if not data_genres_films_afficher and id_film_sel == 0:
-                    flash("""La table "t_film" est vide. !""", "warning")
+                    flash("""La table "t_client" est vide. !""", "warning")
                 elif not data_genres_films_afficher and id_film_sel > 0:
-                    # Si l'utilisateur change l'id_film dans l'URL et qu'il ne correspond à aucun film
-                    flash(f"Le film {id_film_sel} demandé n'existe pas !!", "warning")
-                else:
-                    flash(f"Données films et genres affichés !!", "success")
+                    flash(f"Le client {id_film_sel} demandé n'existe pas !!", "warning")
+
 
         except Exception as Exception_films_genres_afficher:
-            raise ExceptionFilmsGenresAfficher(f"fichier : {Path(__file__).name}  ;  {films_genres_afficher.__name__} ;"
-                                               f"{Exception_films_genres_afficher}")
+            raise Exception(f"fichier : {Path(__file__).name}  ;  {films_genres_afficher.__name__} ;"
+                            f"{Exception_films_genres_afficher}")
 
     print("films_genres_afficher  ", data_genres_films_afficher)
-    # Envoie la page "HTML" au serveur.
     return render_template("films_genres/films_genres_afficher.html", data=data_genres_films_afficher)
+
 
 
 """
@@ -93,74 +81,42 @@ def edit_genre_film_selected():
     if request.method == "GET":
         try:
             with DBconnection() as mc_afficher:
-                strsql_genres_afficher = """SELECT id_genre, intitule_genre FROM t_genre ORDER BY id_genre ASC"""
-                mc_afficher.execute(strsql_genres_afficher)
-            data_genres_all = mc_afficher.fetchall()
-            print("dans edit_genre_film_selected ---> data_genres_all", data_genres_all)
+                # Récupère tous les utilisateurs
+                strsql_utilisateurs_afficher = """SELECT id_utilisateur, nom FROM t_utilisateur ORDER BY id_utilisateur ASC"""
+                mc_afficher.execute(strsql_utilisateurs_afficher)
+                data_utilisateurs_all = mc_afficher.fetchall()
+                print("Tous les utilisateurs :", data_utilisateurs_all)
 
-            # Récupère la valeur de "id_film" du formulaire html "films_genres_afficher.html"
-            # l'utilisateur clique sur le bouton "Modifier" et on récupère la valeur de "id_film"
-            # grâce à la variable "id_film_genres_edit_html" dans le fichier "films_genres_afficher.html"
-            # href="{{ url_for('edit_genre_film_selected', id_film_genres_edit_html=row.id_film) }}"
-            id_film_genres_edit = request.values['id_film_genres_edit_html']
+            # Récupère l'ID du client sélectionné depuis le bouton "Modifier"
+            id_client_edit = request.values['id_film_genres_edit_html']
+            session['session_id_client_edit'] = id_client_edit
 
-            # Mémorise l'id du film dans une variable de session
-            # (ici la sécurité de l'application n'est pas engagée)
-            # il faut éviter de stocker des données sensibles dans des variables de sessions.
-            session['session_id_film_genres_edit'] = id_film_genres_edit
+            dict_id_client = {"value_id_film_selected": id_client_edit}
 
-            # Constitution d'un dictionnaire pour associer l'id du film sélectionné avec un nom de variable
-            valeur_id_film_selected_dictionnaire = {"value_id_film_selected": id_film_genres_edit}
+            # Récupère les infos du client et les utilisateurs associés/non associés
+            data_client, data_utilisateurs_non_attribues, data_utilisateurs_attribues = \
+                genres_films_afficher_data(dict_id_client)
 
-            # Récupère les données grâce à 3 requêtes MySql définie dans la fonction genres_films_afficher_data
-            # 1) Sélection du film choisi
-            # 2) Sélection des genres "déjà" attribués pour le film.
-            # 3) Sélection des genres "pas encore" attribués pour le film choisi.
-            # ATTENTION à l'ordre d'assignation des variables retournées par la fonction "genres_films_afficher_data"
-            data_genre_film_selected, data_genres_films_non_attribues, data_genres_films_attribues = \
-                genres_films_afficher_data(valeur_id_film_selected_dictionnaire)
+            # Enregistre dans la session les ID utilisateurs attribués et non attribués
+            session['session_lst_utilisateurs_non_attribues'] = [item['id_utilisateur'] for item in data_utilisateurs_non_attribues]
+            session['session_lst_utilisateurs_attribues'] = [item['id_utilisateur'] for item in data_utilisateurs_attribues]
 
-            print(data_genre_film_selected)
-            lst_data_film_selected = [item['id_film'] for item in data_genre_film_selected]
-            print("lst_data_film_selected  ", lst_data_film_selected,
-                  type(lst_data_film_selected))
+            print("Client sélectionné :", data_client)
+            print("Utilisateurs non attribués :", data_utilisateurs_non_attribues)
+            print("Utilisateurs attribués :", data_utilisateurs_attribues)
 
-            # Dans le composant "tags-selector-tagselect" on doit connaître
-            # les genres qui ne sont pas encore sélectionnés.
-            lst_data_genres_films_non_attribues = [item['id_genre'] for item in data_genres_films_non_attribues]
-            session['session_lst_data_genres_films_non_attribues'] = lst_data_genres_films_non_attribues
-            print("lst_data_genres_films_non_attribues  ", lst_data_genres_films_non_attribues,
-                  type(lst_data_genres_films_non_attribues))
+        except Exception as e:
+            raise ExceptionEditGenreFilmSelected(
+                f"fichier : {Path(__file__).name} ; fonction : {edit_genre_film_selected.__name__} ; erreur : {e}"
+            )
 
-            # Dans le composant "tags-selector-tagselect" on doit connaître
-            # les genres qui sont déjà sélectionnés.
-            lst_data_genres_films_old_attribues = [item['id_genre'] for item in data_genres_films_attribues]
-            session['session_lst_data_genres_films_old_attribues'] = lst_data_genres_films_old_attribues
-            print("lst_data_genres_films_old_attribues  ", lst_data_genres_films_old_attribues,
-                  type(lst_data_genres_films_old_attribues))
+        return render_template("films_genres/films_genres_modifier_tags_dropbox.html",
+                               data_genres=data_utilisateurs_all,
+                               data_film_selected=data_client,
+                               data_genres_attribues=data_utilisateurs_attribues,
+                               data_genres_non_attribues=data_utilisateurs_non_attribues)
 
-            print(" data data_genre_film_selected", data_genre_film_selected, "type ", type(data_genre_film_selected))
-            print(" data data_genres_films_non_attribues ", data_genres_films_non_attribues, "type ",
-                  type(data_genres_films_non_attribues))
-            print(" data_genres_films_attribues ", data_genres_films_attribues, "type ",
-                  type(data_genres_films_attribues))
 
-            # Extrait les valeurs contenues dans la table "t_genres", colonne "intitule_genre"
-            # Le composant javascript "tagify" pour afficher les tags n'a pas besoin de l'id_genre
-            lst_data_genres_films_non_attribues = [item['intitule_genre'] for item in data_genres_films_non_attribues]
-            print("lst_all_genres gf_edit_genre_film_selected ", lst_data_genres_films_non_attribues,
-                  type(lst_data_genres_films_non_attribues))
-
-        except Exception as Exception_edit_genre_film_selected:
-            raise ExceptionEditGenreFilmSelected(f"fichier : {Path(__file__).name}  ;  "
-                                                 f"{edit_genre_film_selected.__name__} ; "
-                                                 f"{Exception_edit_genre_film_selected}")
-
-    return render_template("films_genres/films_genres_modifier_tags_dropbox.html",
-                           data_genres=data_genres_all,
-                           data_film_selected=data_genre_film_selected,
-                           data_genres_attribues=data_genres_films_attribues,
-                           data_genres_non_attribues=data_genres_films_non_attribues)
 
 
 """

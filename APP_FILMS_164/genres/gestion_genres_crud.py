@@ -57,14 +57,11 @@ def genres_afficher(order_by, id_genre_sel):
 
                 # Différencier les messages si la table est vide.
                 if not data_genres and id_genre_sel == 0:
-                    flash("""La table "t_genre" est vide. !!""", "warning")
+                    flash("""La table "t_docclients" est vide. !!""", "warning")
                 elif not data_genres and id_genre_sel > 0:
                     # Si l'utilisateur change l'id_genre dans l'URL et que le genre n'existe pas,
-                    flash(f"Le genre demandé n'existe pas !!", "warning")
-                else:
-                    # Dans tous les autres cas, c'est que la table "t_genre" est vide.
-                    # OM 2020.04.09 La ligne ci-dessous permet de donner un sentiment rassurant aux utilisateurs.
-                    flash(f"Données genres affichés !!", "success")
+                    flash(f"La doc demandé n'existe pas !!", "warning")
+                
 
         except Exception as Exception_genres_afficher:
             raise ExceptionGenresAfficher(f"fichier : {Path(__file__).name}  ;  "
@@ -101,19 +98,27 @@ def genres_ajouter_wtf():
     if request.method == "POST":
         try:
             if form.validate_on_submit():
-                name_genre_wtf = form.nom_genre_wtf.data
-                name_genre = name_genre_wtf.lower()
-                valeurs_insertion_dictionnaire = {"value_intitule_genre": name_genre}
-                print("valeurs_insertion_dictionnaire ", valeurs_insertion_dictionnaire)
+                entreprise = form.entreprise.data
+                titre = form.titre.data
+                contenu = form.contenu.data
+                date_ajout = form.date_ajout.data  # Assure-toi que ce champ est bien en format YYYY-MM-DD
 
-                strsql_insert_genre = """INSERT INTO t_docclients (id_doc,titre) VALUES (NULL,%(value_intitule_genre)s) """
+                valeurs_insertion_dictionnaire = {
+                    "value_entreprise": entreprise,
+                    "value_titre": titre,
+                    "value_contenu": contenu,
+                    "value_date_ajout": date_ajout
+                }
+
+                strsql_insert_docclient = """
+                    INSERT INTO t_docclients 
+                    (entreprise, titre, contenu, date_ajout) 
+                    VALUES (%(value_entreprise)s, %(value_titre)s, %(value_contenu)s, %(value_date_ajout)s)
+                """
                 with DBconnection() as mconn_bd:
-                    mconn_bd.execute(strsql_insert_genre, valeurs_insertion_dictionnaire)
+                    mconn_bd.execute(strsql_insert_docclient, valeurs_insertion_dictionnaire)
 
-                flash(f"Données insérées !!", "success")
-                print(f"Données insérées !!")
-
-                # Pour afficher et constater l'insertion de la valeur, on affiche en ordre inverse. (DESC)
+                flash("Document inséré avec succès !", "success")
                 return redirect(url_for('genres_afficher', order_by='DESC', id_genre_sel=0))
 
         except Exception as Exception_genres_ajouter_wtf:
@@ -122,6 +127,7 @@ def genres_ajouter_wtf():
                                             f"{Exception_genres_ajouter_wtf}")
 
     return render_template("genres/genres_ajouter_wtf.html", form=form)
+
 
 
 """
@@ -156,12 +162,14 @@ def genre_update_wtf():
         form_update = FormWTFUpdateGenre()
 
         if request.method == "POST" and form_update.submit.data and form_update.validate():
+            entreprise_update = form_update.entreprise.data
             titre_update = form_update.titre.data
             contenu_update = form_update.contenu.data
             date_ajout_update = form_update.date_ajout.data
 
             valeur_update_dictionnaire = {
                 "value_id_doc": id_doc_update,
+                "value_entreprise": entreprise_update,
                 "value_titre": titre_update,
                 "value_contenu": contenu_update,
                 "value_date_ajout": date_ajout_update
@@ -169,7 +177,8 @@ def genre_update_wtf():
 
             str_sql_update_docclient = """
                 UPDATE t_docclients 
-                SET titre = %(value_titre)s, 
+                SET entreprise = %(value_entreprise)s,
+                    titre = %(value_titre)s, 
                     contenu = %(value_contenu)s,
                     date_ajout = %(value_date_ajout)s
                 WHERE id_doc = %(value_id_doc)s
@@ -183,7 +192,7 @@ def genre_update_wtf():
 
         elif request.method == "GET":
             str_sql_select_docclient = """
-                SELECT id_doc, titre, contenu, date_ajout 
+                SELECT id_doc, entreprise, titre, contenu, date_ajout 
                 FROM t_docclients 
                 WHERE id_doc = %(value_id_doc)s
             """
@@ -197,6 +206,7 @@ def genre_update_wtf():
                 flash("Aucun document trouvé avec cet identifiant.", "warning")
                 return redirect(url_for("genres_afficher", order_by="ASC", id_genre_sel=0))
 
+            form_update.entreprise.data = data_docclient["entreprise"]
             form_update.titre.data = data_docclient["titre"]
             form_update.contenu.data = data_docclient["contenu"]
             form_update.date_ajout.data = data_docclient["date_ajout"]
@@ -207,6 +217,7 @@ def genre_update_wtf():
                                       f"{e}")
 
     return render_template("genres/genre_update_wtf.html", form_update=form_update)
+
 
 
 

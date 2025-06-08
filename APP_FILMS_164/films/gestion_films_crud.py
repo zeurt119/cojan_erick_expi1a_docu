@@ -30,32 +30,52 @@ Remarque :  Dans le champ "nom_film_update_wtf" du formulaire "films/films_updat
 
 @app.route("/film_add", methods=['GET', 'POST'])
 def film_add_wtf():
-    # Objet formulaire pour AJOUTER un film
+    # Objet formulaire pour AJOUTER un client
     form_add_film = FormWTFAddFilm()
     if request.method == "POST":
         try:
             if form_add_film.validate_on_submit():
-                nom_film_add = form_add_film.nom_film_add_wtf.data
+                # Récupérer les valeurs du formulaire avec les bons noms de champs
+                nom_utilisateur = form_add_film.nom_client_add_wtf.data
+                prenom_utilisateur = form_add_film.prenom_client_add_wtf.data
+                email_utilisateur = form_add_film.email_client_add_wtf.data
+                entreprise_utilisateur = form_add_film.entreprise_client_add_wtf.data
+                telephone_utilisateur = form_add_film.telephone_client_add_wtf.data
 
-                valeurs_insertion_dictionnaire = {"value_nom_film": nom_film_add}
+                valeurs_insertion_dictionnaire = {
+                    "nom": nom_utilisateur,
+                    "prenom": prenom_utilisateur,
+                    "email": email_utilisateur,
+                    "entreprise": entreprise_utilisateur,
+                    "telephone": telephone_utilisateur
+                }
                 print("valeurs_insertion_dictionnaire ", valeurs_insertion_dictionnaire)
 
-                strsql_insert_film = """INSERT INTO t_film (id_film,nom_film) VALUES (NULL,%(value_nom_film)s) """
+                # Requête SQL pour insérer dans la table t_client
+                strsql_insert_utilisateur = """
+                    INSERT INTO t_client (nom, prenom, email, entreprise, telephone)
+                    VALUES (%(nom)s, %(prenom)s, %(email)s, %(entreprise)s, %(telephone)s)
+                """
                 with DBconnection() as mconn_bd:
-                    mconn_bd.execute(strsql_insert_film, valeurs_insertion_dictionnaire)
+                    mconn_bd.execute(strsql_insert_utilisateur, valeurs_insertion_dictionnaire)
 
                 flash(f"Données insérées !!", "success")
                 print(f"Données insérées !!")
 
-                # Pour afficher et constater l'insertion du nouveau film (id_film_sel=0 => afficher tous les films)
+                # Rediriger vers la page d'affichage (adapte si besoin)
                 return redirect(url_for('films_genres_afficher', id_film_sel=0))
 
         except Exception as Exception_genres_ajouter_wtf:
-            raise ExceptionGenresAjouterWtf(f"fichier : {Path(__file__).name}  ;  "
-                                            f"{film_add_wtf.__name__} ; "
-                                            f"{Exception_genres_ajouter_wtf}")
+            raise ExceptionGenresAjouterWtf(
+                f"fichier : {Path(__file__).name}  ;  "
+                f"{film_add_wtf.__name__} ; "
+                f"{Exception_genres_ajouter_wtf}"
+            )
 
     return render_template("films/film_add_wtf.html", form_add_film=form_add_film)
+
+
+
 
 
 """Editer(update) un film qui a été sélectionné dans le formulaire "films_genres_afficher.html"
@@ -76,72 +96,72 @@ Remarque :  Dans le champ "nom_film_update_wtf" du formulaire "films/films_updat
 
 @app.route("/film_update", methods=['GET', 'POST'])
 def film_update_wtf():
-    # L'utilisateur vient de cliquer sur le bouton "EDIT". Récupère la valeur de "id_film"
-    id_film_update = request.values['id_film_btn_edit_html']
+    # Récupérer l'id client à modifier (anciennement id_film_btn_edit_html)
+    id_client_update = request.values['id_film_btn_edit_html']
 
-    # Objet formulaire pour l'UPDATE
-    form_update_film = FormWTFUpdateFilm()
+    # Formulaire pour la mise à jour (FormWTFUpdateFilm doit contenir les bons champs)
+    form_update_client = FormWTFUpdateFilm()  # Renommer si tu veux, ici on garde le même nom
+
     try:
-        # 2023.05.14 OM S'il y a des listes déroulantes dans le formulaire
-        # La validation pose quelques problèmes
-        if request.method == "POST" and form_update_film.submit.data:
-            # Récupèrer la valeur du champ depuis "genre_update_wtf.html" après avoir cliqué sur "SUBMIT".
-            nom_film_update = form_update_film.nom_film_update_wtf.data
-            duree_film_update = form_update_film.duree_film_update_wtf.data
-            description_film_update = form_update_film.description_film_update_wtf.data
-            cover_link_film_update = form_update_film.cover_link_film_update_wtf.data
-            datesortie_film_update = form_update_film.datesortie_film_update_wtf.data
+        if request.method == "POST" and form_update_client.submit.data:
+            # Récupérer les champs modifiables
+            nom_update = form_update_client.nom_client_update_wtf.data
+            prenom_update = form_update_client.prenom_client_update_wtf.data
+            email_update = form_update_client.email_client_update_wtf.data
+            entreprise_update = form_update_client.entreprise_client_update_wtf.data
+            telephone_update = form_update_client.telephone_client_update_wtf.data
 
-            valeur_update_dictionnaire = {"value_id_film": id_film_update,
-                                          "value_nom_film": nom_film_update,
-                                          "value_duree_film": duree_film_update,
-                                          "value_description_film": description_film_update,
-                                          "value_cover_link_film": cover_link_film_update,
-                                          "value_datesortie_film": datesortie_film_update
-                                          }
-            print("valeur_update_dictionnaire ", valeur_update_dictionnaire)
+            valeur_update_dictionnaire = {
+                "value_id_client": id_client_update,
+                "value_nom": nom_update,
+                "value_prenom": prenom_update,
+                "value_email": email_update,
+                "value_entreprise": entreprise_update,
+                "value_telephone": telephone_update
+            }
 
-            str_sql_update_nom_film = """UPDATE t_film SET nom_film = %(value_nom_film)s,
-                                                            duree_film = %(value_duree_film)s,
-                                                            description_film = %(value_description_film)s,
-                                                            cover_link_film = %(value_cover_link_film)s,
-                                                            date_sortie_film = %(value_datesortie_film)s
-                                                            WHERE id_film = %(value_id_film)s"""
+            str_sql_update_client = """
+                UPDATE t_client
+                SET nom = %(value_nom)s,
+                    prenom = %(value_prenom)s,
+                    email = %(value_email)s,
+                    entreprise = %(value_entreprise)s,
+                    telephone = %(value_telephone)s
+                WHERE id_client = %(value_id_client)s
+            """
+
             with DBconnection() as mconn_bd:
-                mconn_bd.execute(str_sql_update_nom_film, valeur_update_dictionnaire)
+                mconn_bd.execute(str_sql_update_client, valeur_update_dictionnaire)
 
-            flash(f"Donnée mise à jour !!", "success")
-            print(f"Donnée mise à jour !!")
+            flash("Client mis à jour !!", "success")
 
-            # afficher et constater que la donnée est mise à jour.
-            # Afficher seulement le film modifié, "ASC" et l'"id_film_update"
-            return redirect(url_for('films_genres_afficher', id_film_sel=id_film_update))
+            # Rediriger vers la page d'affichage après mise à jour
+            return redirect(url_for('films_genres_afficher', id_film_sel=id_client_update))
+
         elif request.method == "GET":
-            # Opération sur la BD pour récupérer "id_film" et "intitule_genre" de la "t_genre"
-            str_sql_id_film = "SELECT * FROM t_film WHERE id_film = %(value_id_film)s"
-            valeur_select_dictionnaire = {"value_id_film": id_film_update}
+            # Récupérer les données client pour préremplir le formulaire
+            str_sql_id_client = "SELECT * FROM t_client WHERE id_client = %(value_id_client)s"
+            valeur_select_dictionnaire = {"value_id_client": id_client_update}
+
             with DBconnection() as mybd_conn:
-                mybd_conn.execute(str_sql_id_film, valeur_select_dictionnaire)
-            # Une seule valeur est suffisante "fetchone()", vu qu'il n'y a qu'un seul champ "nom genre" pour l'UPDATE
-            data_film = mybd_conn.fetchone()
-            print("data_film ", data_film, " type ", type(data_film), " genre ",
-                  data_film["nom_film"])
+                mybd_conn.execute(str_sql_id_client, valeur_select_dictionnaire)
+                data_client = mybd_conn.fetchone()
 
-            # Afficher la valeur sélectionnée dans le champ du formulaire "film_update_wtf.html"
-            form_update_film.nom_film_update_wtf.data = data_film["nom_film"]
-            form_update_film.duree_film_update_wtf.data = data_film["duree_film"]
-            # Debug simple pour contrôler la valeur dans la console "run" de PyCharm
-            print(f" duree film  ", data_film["duree_film"], "  type ", type(data_film["duree_film"]))
-            form_update_film.description_film_update_wtf.data = data_film["description_film"]
-            form_update_film.cover_link_film_update_wtf.data = data_film["cover_link_film"]
-            form_update_film.datesortie_film_update_wtf.data = data_film["date_sortie_film"]
+            form_update_client.nom_client_update_wtf.data = data_client["nom"]
+            form_update_client.prenom_client_update_wtf.data = data_client["prenom"]
+            form_update_client.email_client_update_wtf.data = data_client["email"]
+            form_update_client.entreprise_client_update_wtf.data = data_client["entreprise"]
+            form_update_client.telephone_client_update_wtf.data = data_client["telephone"]
 
-    except Exception as Exception_film_update_wtf:
-        raise ExceptionFilmUpdateWtf(f"fichier : {Path(__file__).name}  ;  "
-                                     f"{film_update_wtf.__name__} ; "
-                                     f"{Exception_film_update_wtf}")
+    except Exception as e:
+        raise ExceptionFilmUpdateWtf(
+            f"fichier : {Path(__file__).name}  ;  "
+            f"{film_update_wtf.__name__} ; "
+            f"{e}"
+        )
 
-    return render_template("films/film_update_wtf.html", form_update_film=form_update_film)
+    return render_template("films/film_update_wtf.html", form_update_film=form_update_client)
+
 
 
 """Effacer(delete) un film qui a été sélectionné dans le formulaire "films_genres_afficher.html"
@@ -159,65 +179,42 @@ Remarque :  Dans le champ "nom_film_delete_wtf" du formulaire "films/film_delete
 
 @app.route("/film_delete", methods=['GET', 'POST'])
 def film_delete_wtf():
-    # Pour afficher ou cacher les boutons "EFFACER"
     data_film_delete = None
     btn_submit_del = None
-    # L'utilisateur vient de cliquer sur le bouton "DELETE". Récupère la valeur de "id_film"
     id_film_delete = request.values['id_film_btn_delete_html']
 
-    # Objet formulaire pour effacer le film sélectionné.
     form_delete_film = FormWTFDeleteFilm()
     try:
-        # Si on clique sur "ANNULER", afficher tous les films.
         if form_delete_film.submit_btn_annuler.data:
             return redirect(url_for("films_genres_afficher", id_film_sel=0))
 
         if form_delete_film.submit_btn_conf_del_film.data:
-            # Récupère les données afin d'afficher à nouveau
-            # le formulaire "films/film_delete_wtf.html" lorsque le bouton "Etes-vous sur d'effacer ?" est cliqué.
             data_film_delete = session['data_film_delete']
-            print("data_film_delete ", data_film_delete)
-
-            flash(f"Effacer le film de façon définitive de la BD !!!", "danger")
-            # L'utilisateur vient de cliquer sur le bouton de confirmation pour effacer...
-            # On affiche le bouton "Effacer genre" qui va irrémédiablement EFFACER le genre
+            flash(f"Effacer le client de façon définitive de la BD !!!", "danger")
             btn_submit_del = True
 
-        # L'utilisateur a vraiment décidé d'effacer.
         if form_delete_film.submit_btn_del_film.data:
             valeur_delete_dictionnaire = {"value_id_film": id_film_delete}
-            print("valeur_delete_dictionnaire ", valeur_delete_dictionnaire)
 
-            str_sql_delete_fk_film_genre = """DELETE FROM t_genre_film WHERE fk_film = %(value_id_film)s"""
-            str_sql_delete_film = """DELETE FROM t_film WHERE id_film = %(value_id_film)s"""
-            # Manière brutale d'effacer d'abord la "fk_film", même si elle n'existe pas dans la "t_genre_film"
-            # Ensuite on peut effacer le film vu qu'il n'est plus "lié" (INNODB) dans la "t_genre_film"
+            # Suppression dans la table t_client
+            str_sql_delete_client = """DELETE FROM t_client WHERE id_client = %(value_id_film)s"""
+
             with DBconnection() as mconn_bd:
-                mconn_bd.execute(str_sql_delete_fk_film_genre, valeur_delete_dictionnaire)
-                mconn_bd.execute(str_sql_delete_film, valeur_delete_dictionnaire)
+                mconn_bd.execute(str_sql_delete_client, valeur_delete_dictionnaire)
 
-            flash(f"Film définitivement effacé !!", "success")
-            print(f"Film définitivement effacé !!")
-
-            # afficher les données
+            flash(f"Client définitivement effacé !!", "success")
             return redirect(url_for('films_genres_afficher', id_film_sel=0))
+
         if request.method == "GET":
             valeur_select_dictionnaire = {"value_id_film": id_film_delete}
-            print(id_film_delete, type(id_film_delete))
 
-            # Requête qui affiche le film qui doit être efffacé.
-            str_sql_genres_films_delete = """SELECT * FROM t_film WHERE id_film = %(value_id_film)s"""
+            str_sql_select_client = """SELECT * FROM t_client WHERE id_client = %(value_id_film)s"""
 
             with DBconnection() as mydb_conn:
-                mydb_conn.execute(str_sql_genres_films_delete, valeur_select_dictionnaire)
+                mydb_conn.execute(str_sql_select_client, valeur_select_dictionnaire)
                 data_film_delete = mydb_conn.fetchall()
-                print("data_film_delete...", data_film_delete)
-
-                # Nécessaire pour mémoriser les données afin d'afficher à nouveau
-                # le formulaire "films/film_delete_wtf.html" lorsque le bouton "Etes-vous sur d'effacer ?" est cliqué.
                 session['data_film_delete'] = data_film_delete
 
-            # Le bouton pour l'action "DELETE" dans le form. "film_delete_wtf.html" est caché.
             btn_submit_del = False
 
     except Exception as Exception_film_delete_wtf:
@@ -228,5 +225,5 @@ def film_delete_wtf():
     return render_template("films/film_delete_wtf.html",
                            form_delete_film=form_delete_film,
                            btn_submit_del=btn_submit_del,
-                           data_film_del=data_film_delete
-                           )
+                           data_film_del=data_film_delete)
+

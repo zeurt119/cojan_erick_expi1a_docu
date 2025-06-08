@@ -13,6 +13,14 @@
 
                 <div class="form-group">
                     <p>
+                        {{ form_update.entreprise.label }}<br>
+                        {{ form_update.entreprise(size=32) }}<br>
+                        {% for error in form_update.entreprise.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </p>
+
+                    <p>
                         {{ form_update.titre.label }}<br>
                         {{ form_update.titre(size=32) }}<br>
                         {% for error in form_update.titre.errors %}
