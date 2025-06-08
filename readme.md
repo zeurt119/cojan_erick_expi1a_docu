@@ -51,12 +51,6 @@ Ce projet est une application web développée avec **Flask (Python)** permettan
 - Téléversement de fichiers PDF/docx.
 - Tableau de bord statistiques.
 - Déploiement en ligne.
-
-## 👥 Public cible
-
-- PME, indépendants, associations, cabinets de conseil ou de transport.
-- Toute structure souhaitant organiser ses documents clients facilement.
-
 ---
 
 Développé par **Erick Cojan** – Informaticien en infrastructure.
