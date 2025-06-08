@@ -5,7 +5,7 @@ Auteur : OM 2023.03.25
 Définition et paramètres du microframework FLASK
 
 Exemples : https://flask.palletsprojects.com/en/2.1.x/quickstart/#a-minimal-application
-test
+
 """
 
 
